@@ -3,6 +3,9 @@
 #[deriving(Show, PartialEq)]
 pub struct Vec2<T>(pub T, pub T);
 
+#[deriving(Show, PartialEq)]
+pub struct Vec4<T>(pub T, pub T, pub T, pub T);
+
 pub const TEST_ITERATIONS: uint = 1_000_000_000;
 
 #[inline(always)]
@@ -58,4 +61,53 @@ fn test_add() {
     assert_eq!(z, Vec2(1.0, 1.0));
 }
 
+#[inline(always)]
+fn add4_f32<T: Copy>(a: &Vec4<T>, b: &Vec4<T>) -> Vec4<T> {
+    use std::simd::f32x4;
+    unsafe {
+        let a = f32x4(
+            *(&a.0 as *const T as *const f32),
+            *(&a.1 as *const T as *const f32),
+            *(&a.2 as *const T as *const f32),
+            *(&a.3 as *const T as *const f32)
+        );
+        let b = f32x4(
+            *(&b.0 as *const T as *const f32),
+            *(&b.1 as *const T as *const f32),
+            *(&b.2 as *const T as *const f32),
+            *(&b.3 as *const T as *const f32)
+        );
+        let res = a + b;
+        Vec4(
+            *(&res.0 as *const f32 as *const T),
+            *(&res.1 as *const f32 as *const T),
+            *(&res.2 as *const f32 as *const T),
+            *(&res.3 as *const f32 as *const T)
+        )
+    }
+}
+
+#[inline(always)]
+fn add4_t<T: Add<T, T>>(a: &Vec4<T>, b: &Vec4<T>) -> Vec4<T> {
+    Vec4(a.0 + b.0, a.1 + b.1, a.2 + b.2, a.3 + b.3)
+}
+
+unsafe fn add4_func<T: 'static + Copy + Add<T, T>>()
+-> fn (&Vec4<T>, &Vec4<T>) -> Vec4<T> {
+    use std::intrinsics::type_id;
+    let ty = type_id::<T>();
+    let ty_f32 = type_id::<f32>();
+    if ty == ty_f32 {
+        add4_f32
+    } else {
+        add4_t
+    }
+}
+
+impl<T: 'static + Copy + Add<T, T>> Add<Vec4<T>, Vec4<T>> for Vec4<T> {
+    #[inline(always)]
+    fn add(&self, rhs: &Vec4<T>) -> Vec4<T> {
+        unsafe { add4_func::<T>()(self, rhs) }
+    }
+}
 
