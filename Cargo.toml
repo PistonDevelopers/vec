@@ -7,3 +7,15 @@ authors = ["Sven Nilsen <bvssvni@gmail.com>"]
 name = "vec"
 path = "src/lib.rs"
 
+[profile.dev]
+opt-level = 3
+debug = false
+
+[profile.release]
+opt-level = 3
+debug = false
+
+[profile.test]
+opt-level = 3
+debug = false
+
