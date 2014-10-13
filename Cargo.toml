@@ -1,0 +1,9 @@
+[package]
+name = "vec"
+version = "0.0.1"
+authors = ["Sven Nilsen <bvssvni@gmail.com>"]
+
+[lib]
+name = "vec"
+path = "src/lib.rs"
+
