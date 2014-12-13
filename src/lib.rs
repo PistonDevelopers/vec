@@ -1,4 +1,3 @@
-#![feature(tuple_indexing)]
 
 #[deriving(Show, PartialEq)]
 pub struct Vec2<T>(pub T, pub T);
@@ -34,7 +33,7 @@ fn add2_t<T: Add<T, T>>(a: &Vec2<T>, b: &Vec2<T>) -> Vec2<T> {
 }
 
 #[inline(always)]
-unsafe fn add2_func<T: 'static + Copy + Add<T, T>>() 
+unsafe fn add2_func<T: 'static + Copy + Add<T, T>>()
 -> fn (&Vec2<T>, &Vec2<T>) -> Vec2<T> {
     use std::intrinsics::type_id;
     let ty = type_id::<T>();
