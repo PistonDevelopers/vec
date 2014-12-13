@@ -1,5 +1,3 @@
-#![feature(tuple_indexing)]
-
 extern crate vec;
 
 fn main() {
