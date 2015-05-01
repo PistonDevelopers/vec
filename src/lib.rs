@@ -1,11 +1,15 @@
+#![feature(core)]
 
-#[deriving(Show, PartialEq)]
+use std::ops::Add;
+use std::any::{ Any, TypeId };
+
+#[derive(Debug, PartialEq)]
 pub struct Vec2<T>(pub T, pub T);
 
-#[deriving(Show, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Vec4<T>(pub T, pub T, pub T, pub T);
 
-pub const TEST_ITERATIONS: uint = 1_000_000_000;
+pub const TEST_ITERATIONS: usize = 1_000_000_000;
 
 #[inline(always)]
 fn add2_f64<T: Copy>(a: &Vec2<T>, b: &Vec2<T>) -> Vec2<T> {
@@ -28,13 +32,16 @@ fn add2_f64<T: Copy>(a: &Vec2<T>, b: &Vec2<T>) -> Vec2<T> {
 }
 
 #[inline(always)]
-fn add2_t<T: Add<T, T>>(a: &Vec2<T>, b: &Vec2<T>) -> Vec2<T> {
+fn add2_t<T>(a: &Vec2<T>, b: &Vec2<T>) -> Vec2<T>
+    where T: Copy + Add<T, Output = T>
+{
     Vec2(a.0 + b.0, a.1 + b.1)
 }
 
 #[inline(always)]
-unsafe fn add2_func<T: 'static + Copy + Add<T, T>>()
--> fn (&Vec2<T>, &Vec2<T>) -> Vec2<T> {
+unsafe fn add2_func<T>() -> fn (&Vec2<T>, &Vec2<T>) -> Vec2<T>
+    where T: 'static + Copy + Add<T, Output = T>
+{
     use std::intrinsics::type_id;
     let ty = type_id::<T>();
     let ty_f64 = type_id::<f64>();
@@ -45,10 +52,14 @@ unsafe fn add2_func<T: 'static + Copy + Add<T, T>>()
     }
 }
 
-impl<T: 'static + Copy + Add<T, T>> Add<Vec2<T>, Vec2<T>> for Vec2<T> {
+impl<T> Add<Vec2<T>> for Vec2<T>
+    where T: 'static + Copy + Add<T, Output = T>
+{
+    type Output = Vec2<T>;
+
     #[inline(always)]
-    fn add(&self, rhs: &Vec2<T>) -> Vec2<T> {
-        unsafe { add2_func::<T>()(self, rhs) }
+    fn add(self, rhs: Vec2<T>) -> Vec2<T> {
+        unsafe { add2_func::<T>()(&self, &rhs) }
     }
 }
 
@@ -87,15 +98,17 @@ fn add4_f32<T: Copy>(a: &Vec4<T>, b: &Vec4<T>) -> Vec4<T> {
 }
 
 #[inline(always)]
-fn add4_t<T: Add<T, T>>(a: &Vec4<T>, b: &Vec4<T>) -> Vec4<T> {
+fn add4_t<T>(a: &Vec4<T>, b: &Vec4<T>) -> Vec4<T>
+    where T: Copy + Add<T, Output = T>
+{
     Vec4(a.0 + b.0, a.1 + b.1, a.2 + b.2, a.3 + b.3)
 }
 
-unsafe fn add4_func<T: 'static + Copy + Add<T, T>>()
--> fn (&Vec4<T>, &Vec4<T>) -> Vec4<T> {
-    use std::intrinsics::type_id;
-    let ty = type_id::<T>();
-    let ty_f32 = type_id::<f32>();
+unsafe fn add4_func<T>() -> fn (&Vec4<T>, &Vec4<T>) -> Vec4<T>
+    where T: Any + Copy + Add<T, Output = T>
+{
+    let ty = TypeId::of::<T>();
+    let ty_f32 = TypeId::of::<f32>();
     if ty == ty_f32 {
         add4_f32
     } else {
@@ -103,10 +116,14 @@ unsafe fn add4_func<T: 'static + Copy + Add<T, T>>()
     }
 }
 
-impl<T: 'static + Copy + Add<T, T>> Add<Vec4<T>, Vec4<T>> for Vec4<T> {
+impl<T> Add<Vec4<T>> for Vec4<T>
+    where T: Any + Copy + Add<T, Output = T>
+{
+    type Output = Vec4<T>;
+
     #[inline(always)]
-    fn add(&self, rhs: &Vec4<T>) -> Vec4<T> {
-        unsafe { add4_func::<T>()(self, rhs) }
+    fn add(self, rhs: Vec4<T>) -> Vec4<T> {
+        unsafe { add4_func::<T>()(&self, &rhs) }
     }
 }
 
